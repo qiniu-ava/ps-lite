@@ -1,0 +1,26 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    component: ps
+  name: ps
+  namespace: test-ps
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: ps
+    spec:
+      imagePullSecrets:
+      - name: atlab-images
+      containers: ps
+        image: reg-xs.qiniu.io/atlab/ps-lite
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 4
+            memory: 64G
+          limits:
+            cpu: 8
+            memory: 128G
