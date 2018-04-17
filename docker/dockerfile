@@ -1,0 +1,21 @@
+FROM ubuntu:16.04
+RUN sed -i s/archive.ubuntu.com/mirrors.163.com/g /etc/apt/sources.list &&\
+    sed -i s/security.ubuntu.com/mirrors.163.com/g /etc/apt/sources.list &&\
+    apt-get update
+RUN apt-get install -y --no-install-recommends\
+    build-essential\
+    ca-certificates\
+    cmake\
+    git\
+    wget\
+    vim\
+    gcc\
+    curl\
+    libcurl4-openssl-dev\
+    unzip\
+    openmp\
+    && rm -rf /var/lib/apt/lists/*
+
+ADD . /src/ps-lite
+WORKDIR /src/ps-lite
+RUN make -j4 && make test
