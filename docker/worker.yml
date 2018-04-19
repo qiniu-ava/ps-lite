@@ -18,17 +18,26 @@ spec:
       - name: worker
         image: reg-xs.qiniu.io/atlab/ps-lite
         imagePullPolicy: Always
-        command: [ "/bin/bash", "-c", "--" ]
-        args: [ "while true; do sleep 30; done;" ]
+        command: 
+        - "python ./tracker/dmlc_mpi.py"
+        - "-n=DMLC_NUM_WORKER"
+        - "-s=DMLC_NUM_SERVER"
+        - "--host-ip=DMLC_PS_ROOT_URI"
+        - "--log-level=DEBUG"
+        args: ["./tests/test_kv_app"]
         env:
         - name: PS_VERBOSE
           value: '1'
         - name: DMLC_NUM_WORKER
-          value: '1'
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.replicas
         - name: DMLC_NUM_SERVER
           value: '1'
         - name: DMLC_ROLE
-          value: worker
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels.role
         - name: DMLC_PS_ROOT_URI
           value: scheduler-service
         - name: DMLC_PS_ROOT_PORT
