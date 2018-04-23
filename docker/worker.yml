@@ -1,0 +1,67 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    role: worker
+  name: worker
+  namespace: test-ps
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: worker
+    spec:
+      imagePullSecrets:
+      - name: atlab-images
+      containers:
+      - name: worker
+        image: reg-xs.qiniu.io/atlab/ps-lite
+        imagePullPolicy: Always
+        command: 
+        - "python ./tracker/dmlc_mpi.py"
+        - "-n=DMLC_NUM_WORKER"
+        - "-s=DMLC_NUM_SERVER"
+        - "--host-ip=DMLC_PS_ROOT_URI"
+        - "--log-level=DEBUG"
+        args: ["./tests/test_kv_app"]
+        env:
+        - name: PS_VERBOSE
+          value: '1'
+        - name: DMLC_NUM_WORKER
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.replicas
+        - name: DMLC_NUM_SERVER
+          value: '1'
+        - name: DMLC_ROLE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels.role
+        - name: DMLC_PS_ROOT_URI
+          value: scheduler-service
+        - name: DMLC_PS_ROOT_PORT
+          value: '9000'
+        resources:
+          requests:
+            cpu: 4
+            memory: 64G
+          limits:
+            cpu: 8
+            memory: 128G
+
+---
+apiVersion: apps/v1
+kind: Service
+metadata:
+  labels:
+    role: worker
+  name: worker-service
+  namespace: test-ps
+spec:
+  ports:
+  - name: worker
+    port: 9000
+    targetPort: 9000
+  selector:
+    role: worker

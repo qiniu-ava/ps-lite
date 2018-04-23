@@ -1,0 +1,65 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    role: ps-scheduler
+  name: scheduler
+  namespace: test-ps
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: scheduler
+    spec:
+      imagePullSecrets:
+      - name: atlab-images
+      containers:
+      - name: scheduler
+        image: reg-xs.qiniu.io/atlab/ps-lite:20180418-e77eea3
+        imagePullPolicy: Always
+        command: 
+        - "python ./tracker/dmlc_mpi.py"
+        - "-n=DMLC_NUM_WORKER"
+        - "-s=DMLC_NUM_SERVER"
+        - "--host-ip=DMLC_PS_ROOT_URI"
+        - "--log-level=DEBUG"
+        args: ["./tests/test_kv_app"]
+        env:
+        - name: PS_VERBOSE
+          value: '1'
+        - name: DMLC_NUM_WORKER
+          value: '1'
+        - name: DMLC_NUM_SERVER
+          value: '1'
+        - name: DMLC_ROLE
+          valueFrom:
+            filedRef:
+              filedPath: metadata.labels.role
+        - name: DMLC_PS_ROOT_URI
+          value: scheduler-service
+        - name: DMLC_PS_ROOT_PORT
+          value: '9000'
+        resources:
+          requests:
+            cpu: 1
+            memory: 4G
+          limits:
+            cpu: 2
+            memory: 8G
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    role: ps-scheduler
+  name: scheduler-service
+  namespace: test-ps
+spec:
+  ports:
+  - name: scheduler
+    port: 9000
+    targetPort: 9000
+  selector:
+    role: scheduler
